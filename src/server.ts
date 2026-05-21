@@ -44,6 +44,9 @@ import { register as registerAddSchedule } from "./tools/add-schedule.js";
 import { register as registerListRuns } from "./tools/list-runs.js";
 import { register as registerSyncFromRepo } from "./tools/sync-from-repo.js";
 import { register as registerSetSecret } from "./tools/set-secret.js";
+import { register as registerCreateDailyAgent } from "./prompts/create-daily-agent.js";
+import { register as registerDebugFailingSchedule } from "./prompts/debug-failing-schedule.js";
+import { register as registerInitFromRepo } from "./prompts/init-from-repo.js";
 
 async function main(): Promise<void> {
   const server = new McpServer({
@@ -60,6 +63,14 @@ async function main(): Promise<void> {
   registerListRuns(server);
   registerSyncFromRepo(server);
   registerSetSecret(server);
+
+  // Prompts (MCP's primitive for "skills" — user-invokable templates
+  // that orient Claude toward a specific task). Each prompt expands
+  // into a user message that sequences tool calls + bakes in cronicle-
+  // specific conventions Claude would otherwise have to guess at.
+  registerCreateDailyAgent(server);
+  registerDebugFailingSchedule(server);
+  registerInitFromRepo(server);
 
   // Stdio transport: stdin/stdout for JSON-RPC, stderr for our own
   // logs. MCP clients ignore anything on stderr — safe debug channel.

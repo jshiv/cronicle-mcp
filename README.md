@@ -47,10 +47,22 @@ Add to your MCP config (see [`examples/claude-desktop-config.json`](./examples/c
 
 | tool | what it does |
 |---|---|
-| `cronicle_create_project` | Provisions a new cronicle project — creates the worker deployment and seeds the cronicle.hcl. Pair with the LLM composing an HCL block to go from intent (*"a daily Reddit summary"*) to running pipeline in one tool call. |
+| `cronicle_list_projects` | Lists projects grouped by org. Use first for discovery before any modifying call. |
+| `cronicle_create_project` | Provisions a new project — worker deployment + seed cronicle.hcl, with rollback. |
+| `cronicle_add_schedule` | Upsert one `schedule { }` block in an existing project via the api's HCL splicer. |
+| `cronicle_list_runs` | Recent runs for a project (or one schedule) — status, duration, task count. |
+| `cronicle_sync_from_repo` | Pull the latest cronicle.hcl from a Mode-A project's repo and apply as a new version. |
+| `cronicle_set_secret` | Create/update a project-scoped secret. Plaintext never echoed back. |
 
-More tools coming: `cronicle_add_schedule`, `cronicle_list_runs`,
-`cronicle_sync_from_repo`, `cronicle_set_secret`.
+## Prompts (skills)
+
+User-invokable templates that orient Claude toward a specific task. Type `/cronicle:` in your MCP client to see them.
+
+| prompt | what it does |
+|---|---|
+| `cronicle:create-daily-agent` | Compose a 3-task daily pipeline (fetch → agent summarise → deliver). Bakes in cronicle conventions (`$scratch`, `$secret.NAME`, `depends`, agent block fields). |
+| `cronicle:debug-failing-schedule` | Pull recent runs + HCL for a project, walk through the most common failure modes (missing secrets, wrong scratch path, cron syntax, agent budget exhausted, etc.). |
+| `cronicle:init-from-repo` | Bootstrap a Mode-A project from a git repo. Verifies the top-level `repo` block, walks through secret setup, confirms first-run health. |
 
 ## Develop locally
 
