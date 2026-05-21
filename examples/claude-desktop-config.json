@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "cronicle": {
+      "command": "npx",
+      "args": ["-y", "cronicle-mcp"],
+      "env": {
+        "CRONICLE_API_URL": "https://cronicle.example",
+        "CRONICLE_TOKEN": "cronicle_pat_REPLACE_ME",
+        "CRONICLE_DEFAULT_ORG": "personal",
+        "CRONICLE_WEB_URL": "https://cronicle.example"
+      }
+    }
+  }
+}

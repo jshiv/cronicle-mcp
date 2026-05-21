@@ -1,0 +1,51 @@
+{
+  "name": "cronicle-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for Cronicle — lets Claude create projects, schedule agent jobs, and monitor runs on your behalf.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "cronicle-mcp": "./dist/server.js"
+  },
+  "main": "./dist/server.js",
+  "types": "./dist/server.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "dev": "tsc --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "tsc --noEmit"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "examples"
+  ],
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.4",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "mcp",
+    "cronicle",
+    "claude",
+    "model-context-protocol",
+    "scheduler",
+    "agents"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jshiv/cronicle-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jshiv/cronicle-mcp/issues"
+  },
+  "homepage": "https://github.com/jshiv/cronicle-mcp#readme"
+}
