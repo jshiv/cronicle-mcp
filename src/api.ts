@@ -148,3 +148,108 @@ export async function putProjectHCL(
     clearTimeout(timer);
   }
 }
+
+// listDeployments returns the api's view of all deployments visible to
+// the caller. Today the api doesn't filter by org; callers do that
+// client-side (with the org column in the response). Acceptable while
+// we're single-org.
+export async function listDeployments(): Promise<{ deployments: Deployment[] }> {
+  return api<{ deployments: Deployment[] }>("/v1/deployments");
+}
+
+// putSchedule inserts or updates one schedule block inside the project
+// HCL via the splicer. PUT is upsert — existing schedule named `name`
+// is replaced, otherwise the block is appended. The api validates the
+// post-splice HCL as a whole and rejects on parse failure with
+// per-line issues.
+export async function putSchedule(
+  projectID: string,
+  scheduleName: string,
+  scheduleHCL: string,
+): Promise<{ project_id: string; name: string; version: number }> {
+  return api<{ project_id: string; name: string; version: number }>(
+    `/v1/projects/${encodeURIComponent(projectID)}/schedules/${encodeURIComponent(scheduleName)}`,
+    { method: "PUT", body: { hcl: scheduleHCL } },
+  );
+}
+
+// syncFromRepo refetches the project's cronicle.hcl from its declared
+// `repo { url, branch }` block and PUTs as a new version. Returns
+// "already_in_sync" when the remote HCL byte-equals the stored one.
+// 400 on Mode B projects (no top-level repo block).
+export type SyncFromRepoResponse = {
+  status: "synced" | "already_in_sync";
+  version: number;
+  source: string;
+  branch: string;
+};
+
+export async function syncFromRepo(projectID: string): Promise<SyncFromRepoResponse> {
+  return api<SyncFromRepoResponse>(
+    `/v1/projects/${encodeURIComponent(projectID)}/sync-from-repo`,
+    { method: "POST" },
+  );
+}
+
+// createSecret persists a project-scoped secret (org-scoped variant
+// exists too but most use cases fit per-project). The api encrypts
+// `value` at rest; this client never sees plaintext past the wire.
+export type SecretMeta = {
+  id: string;
+  org_id: string;
+  project_id: string;
+  name: string;
+  version: number;
+  created_at: string;
+};
+
+export async function createSecret(
+  orgID: string,
+  projectID: string,
+  name: string,
+  value: string,
+): Promise<SecretMeta> {
+  return api<SecretMeta>(
+    `/v1/projects/${encodeURIComponent(projectID)}/secrets`,
+    { method: "POST", body: { org_id: orgID, name, value } },
+  );
+}
+
+// listRuns asks the project's cronicled runtime for recent runs via
+// the api's deployment proxy. cronicled owns the runs table; the api
+// just forwards. Shape is whatever the listener returns — we type the
+// fields we know about and pass the rest through as `extra`.
+//
+// Note: this requires the deployment's listener_url to be reachable
+// from the api (it is in-cluster). Returns an empty list when the
+// project has no deployment yet.
+export type RunSummary = {
+  run_id: string;
+  schedule: string;
+  status: string;        // "running" | "succeeded" | "failed" | "skipped" | ...
+  started_at?: string;
+  finished_at?: string;
+  duration_ms?: number;
+  task_count?: number;
+};
+
+export async function listRuns(
+  projectID: string,
+  scheduleName?: string,
+  limit?: number,
+): Promise<RunSummary[]> {
+  // Find the deployment for this project first; the proxy is keyed by
+  // deployment id, not project id.
+  const deps = await listDeployments();
+  const dep = deps.deployments.find((d) => d.project_id === projectID);
+  if (!dep) return [];
+  const q = new URLSearchParams();
+  if (scheduleName) q.set("schedule", scheduleName);
+  if (limit) q.set("limit", String(limit));
+  const qs = q.toString();
+  const path = `/v1/deployments/${encodeURIComponent(dep.id)}/proxy/v1/runs${qs ? "?" + qs : ""}`;
+  // The listener returns either a bare array or an object — accept both
+  // for forward compat with future cronicled changes.
+  const resp = await api<RunSummary[] | { runs: RunSummary[] }>(path);
+  return Array.isArray(resp) ? resp : resp.runs ?? [];
+}

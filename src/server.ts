@@ -39,6 +39,11 @@ import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { register as registerCreateProject } from "./tools/create-project.js";
+import { register as registerListProjects } from "./tools/list-projects.js";
+import { register as registerAddSchedule } from "./tools/add-schedule.js";
+import { register as registerListRuns } from "./tools/list-runs.js";
+import { register as registerSyncFromRepo } from "./tools/sync-from-repo.js";
+import { register as registerSetSecret } from "./tools/set-secret.js";
 
 async function main(): Promise<void> {
   const server = new McpServer({
@@ -47,8 +52,14 @@ async function main(): Promise<void> {
   });
 
   // Tool registry. Order doesn't matter; each tool publishes its own
-  // schema + handler.
+  // schema + handler. Listed in roughly the order users encounter
+  // them: discovery → create → modify → monitor → ops.
+  registerListProjects(server);
   registerCreateProject(server);
+  registerAddSchedule(server);
+  registerListRuns(server);
+  registerSyncFromRepo(server);
+  registerSetSecret(server);
 
   // Stdio transport: stdin/stdout for JSON-RPC, stderr for our own
   // logs. MCP clients ignore anything on stderr — safe debug channel.
