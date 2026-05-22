@@ -45,14 +45,35 @@ Add to your MCP config (see [`examples/claude-desktop-config.json`](./examples/c
 
 ## Tools
 
+### Discovery
 | tool | what it does |
 |---|---|
-| `cronicle_list_projects` | Lists projects grouped by org. Use first for discovery before any modifying call. |
-| `cronicle_create_project` | Provisions a new project — worker deployment + seed cronicle.hcl, with rollback. |
-| `cronicle_add_schedule` | Upsert one `schedule { }` block in an existing project via the api's HCL splicer. |
+| `cronicle_list_projects` | Lists projects grouped by org. First call before any modifying op. |
 | `cronicle_list_runs` | Recent runs for a project (or one schedule) — status, duration, task count. |
-| `cronicle_sync_from_repo` | Pull the latest cronicle.hcl from a Mode-A project's repo and apply as a new version. |
+| `cronicle_list_secrets` | Names + versions of project secrets. Plaintext never returned. |
+| `cronicle_get_schedule` | One schedule's HCL + project version. Round-trip-edit prerequisite. |
+
+### Create / modify
+| tool | what it does |
+|---|---|
+| `cronicle_create_project` | Provisions a project — deployment + seed HCL, with rollback. |
+| `cronicle_add_schedule` | Upsert one `schedule { }` block via the api's HCL splicer. |
+| `cronicle_delete_schedule` | Remove one schedule from a project. |
 | `cronicle_set_secret` | Create/update a project-scoped secret. Plaintext never echoed back. |
+| `cronicle_delete_secret` | Remove a secret. Warns about active schedules referencing it. |
+
+### Runtime control
+| tool | what it does |
+|---|---|
+| `cronicle_pause_schedule` | Stop the cron from firing without modifying the HCL. |
+| `cronicle_resume_schedule` | Reverse of pause. |
+| `cronicle_run_schedule_now` | One-off manual trigger, bypassing the cron. |
+
+### Ops
+| tool | what it does |
+|---|---|
+| `cronicle_sync_from_repo` | Mode-A re-sync from the project's declared repo. |
+| `cronicle_delete_project` | DESTRUCTIVE. Removes the worker deployment. Gated by `confirm:"delete"`. |
 
 ## Prompts (skills)
 

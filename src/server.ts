@@ -44,6 +44,13 @@ import { register as registerAddSchedule } from "./tools/add-schedule.js";
 import { register as registerListRuns } from "./tools/list-runs.js";
 import { register as registerSyncFromRepo } from "./tools/sync-from-repo.js";
 import { register as registerSetSecret } from "./tools/set-secret.js";
+import { register as registerGetSchedule } from "./tools/get-schedule.js";
+import { register as registerDeleteSchedule } from "./tools/delete-schedule.js";
+import { registerPause, registerResume } from "./tools/pause-schedule.js";
+import { register as registerRunNow } from "./tools/run-schedule-now.js";
+import { register as registerListSecrets } from "./tools/list-secrets.js";
+import { register as registerDeleteSecret } from "./tools/delete-secret.js";
+import { register as registerDeleteProject } from "./tools/delete-project.js";
 import { register as registerCreateDailyAgent } from "./prompts/create-daily-agent.js";
 import { register as registerDebugFailingSchedule } from "./prompts/debug-failing-schedule.js";
 import { register as registerInitFromRepo } from "./prompts/init-from-repo.js";
@@ -57,12 +64,26 @@ async function main(): Promise<void> {
   // Tool registry. Order doesn't matter; each tool publishes its own
   // schema + handler. Listed in roughly the order users encounter
   // them: discovery → create → modify → monitor → ops.
+  // discovery
   registerListProjects(server);
+  // create / write
   registerCreateProject(server);
   registerAddSchedule(server);
+  registerGetSchedule(server);
+  registerDeleteSchedule(server);
+  // runtime control
+  registerPause(server);
+  registerResume(server);
+  registerRunNow(server);
+  // monitor
   registerListRuns(server);
+  // ops
   registerSyncFromRepo(server);
+  registerListSecrets(server);
   registerSetSecret(server);
+  registerDeleteSecret(server);
+  // destructive (gated by confirm:"delete")
+  registerDeleteProject(server);
 
   // Prompts (MCP's primitive for "skills" — user-invokable templates
   // that orient Claude toward a specific task). Each prompt expands

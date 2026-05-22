@@ -253,3 +253,115 @@ export async function listRuns(
   const resp = await api<RunSummary[] | { runs: RunSummary[] }>(path);
   return Array.isArray(resp) ? resp : resp.runs ?? [];
 }
+
+// getSchedule returns one `schedule "name" { ... }` block as HCL plus
+// a structured projection (cronicle's Schedule shape). The full
+// project HCL version is included so the LLM can round-trip an edit
+// (read → modify → put-with-version) without a separate get.
+export type GetScheduleResponse = {
+  project_id: string;
+  name: string;
+  hcl: string;
+  parsed?: unknown; // cronicleconfig.Schedule shape; passed through
+  version: number;
+  paused: boolean;  // deprecated server-side; always false. Fetch runtime state separately.
+  updated_at: string;
+};
+
+export async function getSchedule(
+  projectID: string,
+  name: string,
+): Promise<GetScheduleResponse> {
+  return api<GetScheduleResponse>(
+    `/v1/projects/${encodeURIComponent(projectID)}/schedules/${encodeURIComponent(name)}`,
+  );
+}
+
+// deleteSchedule removes one schedule block from the project HCL.
+// Sibling schedules are untouched. The api returns 200 with the new
+// project version on success, 404 when the named schedule doesn't
+// exist in the file.
+export async function deleteSchedule(
+  projectID: string,
+  name: string,
+): Promise<{ version: number }> {
+  return api<{ version: number }>(
+    `/v1/projects/${encodeURIComponent(projectID)}/schedules/${encodeURIComponent(name)}`,
+    { method: "DELETE" },
+  );
+}
+
+// pauseSchedule / resumeSchedule toggle the schedule's runtime firing
+// state. State lives in cronicled's state.db, NOT the HCL — so pause
+// doesn't bump the HCL version and survives HCL edits. The api
+// forwards to cronicled via the deployment proxy.
+export async function pauseSchedule(
+  projectID: string,
+  name: string,
+  actor?: string,
+): Promise<void> {
+  await api(
+    `/v1/projects/${encodeURIComponent(projectID)}/schedules/${encodeURIComponent(name)}/pause`,
+    { method: "POST", body: { actor: actor ?? "mcp" } },
+  );
+}
+
+export async function resumeSchedule(projectID: string, name: string): Promise<void> {
+  await api(
+    `/v1/projects/${encodeURIComponent(projectID)}/schedules/${encodeURIComponent(name)}/resume`,
+    { method: "POST" },
+  );
+}
+
+// triggerSchedule queues a one-off run of the named schedule, ignoring
+// its cron. Routed through the deployment proxy to cronicled, which
+// adds the run to its dispatch queue. Returns immediately — the run
+// itself happens asynchronously; use listRuns to monitor it.
+export async function triggerSchedule(
+  projectID: string,
+  name: string,
+): Promise<{ queued: string; schedule: string }> {
+  const deps = await listDeployments();
+  const dep = deps.deployments.find((d) => d.project_id === projectID);
+  if (!dep) {
+    throw new Error(
+      `No deployment for project "${projectID}". Create the project first via cronicle_create_project.`,
+    );
+  }
+  return api<{ queued: string; schedule: string }>(
+    `/v1/deployments/${encodeURIComponent(dep.id)}/proxy/v1/schedules/${encodeURIComponent(name)}/trigger`,
+    { method: "POST" },
+  );
+}
+
+// listSecrets returns metadata about the project's secrets. Plaintext
+// is NEVER returned — only (id, name, version, created_at). Use this
+// to answer "does my project have ANTHROPIC_API_KEY set?" before
+// telling the user to set it again.
+export async function listSecrets(projectID: string): Promise<SecretMeta[]> {
+  const r = await api<{ secrets: SecretMeta[] }>(
+    `/v1/projects/${encodeURIComponent(projectID)}/secrets`,
+  );
+  return r.secrets ?? [];
+}
+
+export async function deleteSecret(projectID: string, name: string): Promise<void> {
+  await api(
+    `/v1/projects/${encodeURIComponent(projectID)}/secrets/${encodeURIComponent(name)}`,
+    { method: "DELETE" },
+  );
+}
+
+// deleteProject removes the project's deployment. The schedule_configs
+// row (the stored HCL) stays for audit; recreating the project with
+// the same slug rebinds to the old HCL. To fully wipe a project the
+// user should delete via the cronicle UI today — a dedicated
+// "delete-project-and-config" api endpoint is a TODO.
+export async function deleteProject(projectID: string): Promise<void> {
+  const deps = await listDeployments();
+  const dep = deps.deployments.find((d) => d.project_id === projectID);
+  if (!dep) {
+    throw new Error(`No deployment for project "${projectID}".`);
+  }
+  await api(`/v1/deployments/${encodeURIComponent(dep.id)}`, { method: "DELETE" });
+}
