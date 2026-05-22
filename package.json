@@ -1,7 +1,7 @@
 {
   "name": "cronicle-mcp",
   "version": "0.1.0",
-  "description": "MCP server for Cronicle — lets Claude create projects, schedule agent jobs, and monitor runs on your behalf.",
+  "description": "MCP server for Cronicle \u2014 lets Claude create projects, schedule agent jobs, and monitor runs on your behalf.",
   "license": "MIT",
   "type": "module",
   "bin": {
@@ -14,7 +14,8 @@
     "start": "node dist/server.js",
     "dev": "tsc --watch",
     "typecheck": "tsc --noEmit",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "prepublishOnly": "npm run build && chmod +x dist/server.js"
   },
   "files": [
     "dist",
