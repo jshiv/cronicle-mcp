@@ -49,6 +49,7 @@ Add to your MCP config (see [`examples/claude-desktop-config.json`](./examples/c
 | tool | what it does |
 |---|---|
 | `cronicle_list_projects` | Lists projects grouped by org. First call before any modifying op. |
+| `cronicle_get_project_hcl` | Returns the full cronicle.hcl for a project as raw text. |
 | `cronicle_list_runs` | Recent runs for a project (or one schedule) — status, duration, task count. |
 | `cronicle_list_secrets` | Names + versions of project secrets. Plaintext never returned. |
 | `cronicle_get_schedule` | One schedule's HCL + project version. Round-trip-edit prerequisite. |
@@ -56,7 +57,8 @@ Add to your MCP config (see [`examples/claude-desktop-config.json`](./examples/c
 ### Create / modify
 | tool | what it does |
 |---|---|
-| `cronicle_create_project` | Provisions a project — deployment + seed HCL, with rollback. |
+| `cronicle_create_project` | Provisions a project from an inline HCL string. With rollback on partial failure. |
+| `cronicle_init_project_from_repo` | One-call Mode-A bootstrap — fetches cronicle.hcl from a repo, creates the project. |
 | `cronicle_add_schedule` | Upsert one `schedule { }` block via the api's HCL splicer. |
 | `cronicle_delete_schedule` | Remove one schedule from a project. |
 | `cronicle_set_secret` | Create/update a project-scoped secret. Plaintext never echoed back. |

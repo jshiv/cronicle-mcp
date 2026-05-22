@@ -51,6 +51,8 @@ import { register as registerRunNow } from "./tools/run-schedule-now.js";
 import { register as registerListSecrets } from "./tools/list-secrets.js";
 import { register as registerDeleteSecret } from "./tools/delete-secret.js";
 import { register as registerDeleteProject } from "./tools/delete-project.js";
+import { register as registerInitFromRepoTool } from "./tools/init-project-from-repo.js";
+import { register as registerGetProjectHCL } from "./tools/get-project-hcl.js";
 import { register as registerCreateDailyAgent } from "./prompts/create-daily-agent.js";
 import { register as registerDebugFailingSchedule } from "./prompts/debug-failing-schedule.js";
 import { register as registerInitFromRepo } from "./prompts/init-from-repo.js";
@@ -66,8 +68,10 @@ async function main(): Promise<void> {
   // them: discovery → create → modify → monitor → ops.
   // discovery
   registerListProjects(server);
+  registerGetProjectHCL(server);
   // create / write
   registerCreateProject(server);
+  registerInitFromRepoTool(server);
   registerAddSchedule(server);
   registerGetSchedule(server);
   registerDeleteSchedule(server);

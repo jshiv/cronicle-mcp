@@ -365,3 +365,84 @@ export async function deleteProject(projectID: string): Promise<void> {
   }
   await api(`/v1/deployments/${encodeURIComponent(dep.id)}`, { method: "DELETE" });
 }
+
+// fetchHCLFromRepo asks the api to GET cronicle.hcl from a public
+// GitHub repo at the given branch/path and validate it parses. Returns
+// the bytes plus the canonical source ref so the caller can use both
+// for create AND for the "synced from" badge in the response.
+//
+// The api enforces the Mode-A precondition (top-level `repo` block in
+// the fetched HCL); without it the fetch 400s with an actionable
+// fix-it message. We surface that verbatim so the LLM can tell the
+// user what to add.
+export type FetchHCLResponse = {
+  hcl: string;
+  source: string;
+  branch: string;
+  path: string;
+};
+
+export async function fetchHCLFromRepo(
+  url: string,
+  branch?: string,
+  path?: string,
+): Promise<FetchHCLResponse> {
+  return api<FetchHCLResponse>("/v1/repos/fetch-hcl", {
+    method: "POST",
+    body: { url, branch, path },
+  });
+}
+
+// getProjectHCL fetches the full project cronicle.hcl as raw text.
+// Bypasses the JSON-parsing api() helper because this endpoint returns
+// text/x-hcl, not JSON. Used by cronicle_get_project_hcl + by any tool
+// that needs to read-modify-write the whole file (the per-schedule
+// path is cronicle_get_schedule + cronicle_add_schedule).
+export async function getProjectHCL(projectID: string): Promise<string> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), DEFAULT_TIMEOUT_MS);
+  try {
+    const resp = await fetch(
+      `${API_URL}/v1/projects/${encodeURIComponent(projectID)}/cronicle.hcl`,
+      {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${TOKEN}`,
+          "User-Agent": "cronicle-mcp/0.1",
+        },
+        signal: ctrl.signal,
+      },
+    );
+    const text = await resp.text();
+    if (!resp.ok) {
+      let body: unknown;
+      try { body = JSON.parse(text); } catch { body = { raw: text }; }
+      throw new CronicleAPIError(resp.status, body);
+    }
+    return text;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+// deriveSlugFromRepoURL pulls the repo name out of common URL shapes
+// for use as a project_slug default. Matches what the cronicle-infra
+// URL parser accepts.
+//
+//   https://github.com/owner/repo            → "repo"
+//   https://github.com/owner/repo.git        → "repo"
+//   git@github.com:owner/repo.git            → "repo"
+//
+// Returns "" when nothing recognizable parses — caller should require
+// project_slug explicitly in that case.
+export function deriveSlugFromRepoURL(url: string): string {
+  const stripped = url.trim().replace(/\.git$/, "").replace(/\/+$/, "");
+  // SSH shape — last segment after the colon-slash.
+  if (stripped.startsWith("git@")) {
+    const m = stripped.match(/:([^/]+)\/([^/]+)$/);
+    return m?.[2] ?? "";
+  }
+  // HTTPS shape — last path segment.
+  const m = stripped.match(/\/([^/]+)\/([^/]+)$/);
+  return m?.[2] ?? "";
+}
