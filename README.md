@@ -1,5 +1,28 @@
 # cronicle-mcp
 
+> ⚠️ **Superseded.** The hosted MCP server is now folded into the
+> cronicle api itself (Go, in
+> [`cronicle-infra/internal/mcp`](https://github.com/jshiv/cronicle-infra/tree/main/internal/mcp)),
+> mounted at `https://api.triggerflux.dev/mcp`. The Go implementation
+> has the same 16 tools + 3 prompts as the TypeScript surface here,
+> plus full WorkOS OAuth (no PAT copy-paste required).
+>
+> Configure your MCP client with just the URL — no install step:
+>
+> ```bash
+> claude mcp add cronicle --transport http https://api.triggerflux.dev/mcp
+> ```
+>
+> On first tool call Claude opens a browser to WorkOS, you sign in,
+> the JWT is bound to your Claude install. Done.
+>
+> This repository is kept as the **spec / reference** for the tool
+> schemas + prompt templates. New work happens in the Go impl. Don't
+> npm install this package — it talks to a paired backend route shape
+> that the Go impl has diverged from.
+
+---
+
 MCP server for [Cronicle](https://github.com/jshiv/cronicle) — lets Claude
 create projects, schedule agent jobs, and monitor runs on your behalf.
 
