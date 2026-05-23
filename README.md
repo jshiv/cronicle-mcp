@@ -3,14 +3,14 @@
 > ⚠️ **Superseded.** The hosted MCP server is now folded into the
 > cronicle api itself (Go, in
 > [`cronicle-infra/internal/mcp`](https://github.com/jshiv/cronicle-infra/tree/main/internal/mcp)),
-> mounted at `https://api.triggerflux.dev/mcp`. The Go implementation
+> mounted at `https://api.cronicle.dev/mcp`. The Go implementation
 > has the same 16 tools + 3 prompts as the TypeScript surface here,
 > plus full WorkOS OAuth (no PAT copy-paste required).
 >
 > Configure your MCP client with just the URL — no install step:
 >
 > ```bash
-> claude mcp add cronicle --transport http https://api.triggerflux.dev/mcp
+> claude mcp add cronicle --transport http https://api.cronicle.dev/mcp
 > ```
 >
 > On first tool call Claude opens a browser to WorkOS, you sign in,
