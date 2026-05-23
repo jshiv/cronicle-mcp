@@ -39,8 +39,8 @@ Classify the secret:
 
 Tell the user the URL and pause. Examples:
 
-- org-scope: `https://triggerflux.dev/<org>/secrets`
-- project-scope: `https://triggerflux.dev/<org>/projects/<slug>/secrets`
+- org-scope: `https://cronicle.dev/<org>/secrets`
+- project-scope: `https://cronicle.dev/<org>/projects/<slug>/secrets`
 
 Wait for confirmation, then re-run `cronicle_secret_status` to verify.
 

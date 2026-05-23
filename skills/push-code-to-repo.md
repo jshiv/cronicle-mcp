@@ -23,7 +23,7 @@ the cronicle-hosted URL, e.g.:
 
 ```hcl
 repo {
-  url    = "https://api.triggerflux.dev/<org>/git/<repo>.git"
+  url    = "https://api.cronicle.dev/<org>/git/<repo>.git"
   branch = "main"
 }
 ```
@@ -56,9 +56,9 @@ Choose:
     cd "$LOCAL_DIR"
     git init -b main 2>/dev/null || true
     git add -A
-    git -c user.email="cronicle@triggerflux.dev" -c user.name="cronicle" commit -m "$MSG"
-    git remote add cronicle "https://x:$CRONICLE_PAT@api.triggerflux.dev/git/$ORG/$REPO_NAME.git" 2>/dev/null || \
-      git remote set-url cronicle "https://x:$CRONICLE_PAT@api.triggerflux.dev/git/$ORG/$REPO_NAME.git"
+    git -c user.email="cronicle@cronicle.dev" -c user.name="cronicle" commit -m "$MSG"
+    git remote add cronicle "https://x:$CRONICLE_PAT@api.cronicle.dev/git/$ORG/$REPO_NAME.git" 2>/dev/null || \
+      git remote set-url cronicle "https://x:$CRONICLE_PAT@api.cronicle.dev/git/$ORG/$REPO_NAME.git"
     git push -u cronicle main
     ```
   - Advantages: preserves history, handles binary, leverages user's git config.

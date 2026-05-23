@@ -14,7 +14,7 @@ This is the "I already have the repo, just deploy it" skill. For the
 
 ## Inputs
 
-- `repo_url` — cronicle-hosted URL, e.g. `https://api.triggerflux.dev/git/<org>/<name>.git`
+- `repo_url` — cronicle-hosted URL, e.g. `https://api.cronicle.dev/git/<org>/<name>.git`
 - `branch` (optional) — default `main`
 
 ## Procedure
