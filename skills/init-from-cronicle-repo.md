@@ -38,6 +38,26 @@ issues:
 - "HCL has no top-level `repo` block" → add the block, push a new commit, retry
 - HCL syntax errors (e.g. `${MS}` interpreted by HCL when meant as bash) → fix and re-push
 
+**Step 1b — HOW THE REPO FILES REACH THE WORKER (read once, never forget):**
+
+The top-level `repo { url = ... }` block is more than metadata for
+sync. It makes the schedule "repo-aware" — at first task exec, the
+worker auto-clones the repo into its workdir, and the `${path}`
+template variable substitutes to that checkout. On subsequent runs the
+worker fetches + checks out the latest commit, so a `git push`
+propagates to the next run automatically.
+
+Concretely: if the repo has a `digest.py` at the root and the HCL says
+
+    task "run" {
+      command = ["python3", "${path}/digest.py"]
+    }
+
+then the worker runs `python3 /<checkout>/digest.py` with `digest.py`
+already on disk. **This is the canonical pattern. Do NOT base64-embed
+scripts in HCL** — that's a workaround Claude sessions reach for when
+they don't realize `${path}` exists and the repo is already there.
+
 **Step 2 — read back the HCL.**
 
 Call `cronicle_get_project_hcl(project_slug=<derived>)` to know which
@@ -70,6 +90,11 @@ unset somewhere the worker can see.
 - ❌ Skipping the first-run verification — a successful init doesn't
   mean the first cron tick will succeed; secrets / commands / env
   could still be broken
+- ❌ **Base64-embedding scripts in HCL.** The repo is auto-cloned at
+  `${path}` on the worker; reference files directly with
+  `command = ["python3", "${path}/file.py"]`. Embedding makes the HCL
+  unreadable, doubles the source-of-truth, and is unnecessary.
+- ❌ Using `${repo}` — that's not a thing. The variable is `${path}`.
 
 ## Common follow-ups
 

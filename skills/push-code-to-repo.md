@@ -23,14 +23,39 @@ the cronicle-hosted URL, e.g.:
 
 ```hcl
 repo {
-  url    = "https://api.cronicle.dev/<org>/git/<repo>.git"
+  url    = "https://api.cronicle.dev/git/<org>/<repo>.git"
   branch = "main"
+}
+
+schedule "daily" {
+  cron     = "0 7 * * *"
+  timezone = "America/Los_Angeles"
+
+  task "run" {
+    command = ["python3", "${path}/digest.py"]
+  }
 }
 ```
 
-Without it, future `cronicle_sync_from_repo` calls return
-"not managed by a repo". If the user's HCL is missing it, offer to
-add it before pushing.
+Two things the top-level `repo` block does:
+
+1. Enables `cronicle_sync_from_repo` (Mode-A). Without it, sync calls
+   return "not managed by a repo."
+2. **Makes the worker auto-clone the repo on first task exec.** The
+   `${path}` template variable substitutes to the checkout dir, so
+   `digest.py` (and any other files in the repo) are available at
+   `${path}/digest.py` without any extra setup. On every subsequent
+   run the worker fetches the latest commit, so a `git push`
+   propagates to the next run automatically.
+
+**Reference repo files via `${path}/<file>`, not by base64-embedding
+them in HCL.** Embedding is a workaround Claude sessions reach for
+when they don't realize `${path}` exists; it doubles the
+source-of-truth and makes the HCL unreadable. The variable name is
+`${path}` (singular `path`), not `${repo}`.
+
+If the user's HCL is missing the top-level `repo` block, offer to add
+it before pushing.
 
 **Step 2 — create the cronicle-hosted repo.**
 
