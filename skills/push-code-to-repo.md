@@ -23,14 +23,47 @@ the cronicle-hosted URL, e.g.:
 
 ```hcl
 repo {
-  url    = "https://api.cronicle.dev/<org>/git/<repo>.git"
-  branch = "main"
+  url      = "https://api.cronicle.dev/git/<org>/<repo>.git"
+  branch   = "main"
+  password = "${env.CRONICLE_TOKEN}"
+}
+
+schedule "daily" {
+  cron     = "0 7 * * *"
+  timezone = "America/Los_Angeles"
+
+  task "run" {
+    command = ["python3", "${path}/digest.py"]
+  }
 }
 ```
 
-Without it, future `cronicle_sync_from_repo` calls return
-"not managed by a repo". If the user's HCL is missing it, offer to
-add it before pushing.
+The `password = "${env.X}"` syntax interpolates an env var at HCL
+parse time — the literal secret never appears in the file. The worker
+pod has `CRONICLE_TOKEN` already in its environment (the platform
+injects it), so the user just declares the reference. For GitHub or
+other hosts, swap in the host's env var
+(`password = "${env.GITHUB_TOKEN}"`). Public repos can omit the line.
+
+Two things the top-level `repo` block does:
+
+1. Enables `cronicle_sync_from_repo` (Mode-A). Without it, sync calls
+   return "not managed by a repo."
+2. **Makes the worker auto-clone the repo on first task exec.** The
+   `${path}` template variable substitutes to the checkout dir, so
+   `digest.py` (and any other files in the repo) are available at
+   `${path}/digest.py` without any extra setup. On every subsequent
+   run the worker fetches the latest commit, so a `git push`
+   propagates to the next run automatically.
+
+**Reference repo files via `${path}/<file>`, not by base64-embedding
+them in HCL.** Embedding is a workaround Claude sessions reach for
+when they don't realize `${path}` exists; it doubles the
+source-of-truth and makes the HCL unreadable. The variable name is
+`${path}` (singular `path`), not `${repo}`.
+
+If the user's HCL is missing the top-level `repo` block, offer to add
+it before pushing.
 
 **Step 2 — create the cronicle-hosted repo.**
 
