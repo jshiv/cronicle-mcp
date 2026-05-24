@@ -47,6 +47,22 @@ template variable substitutes to that checkout. On subsequent runs the
 worker fetches + checks out the latest commit, so a `git push`
 propagates to the next run automatically.
 
+For cronicle-hosted repos, the block also carries the basic-auth
+credential the worker uses to clone:
+
+```hcl
+repo {
+  url      = "https://api.cronicle.dev/git/<org>/<repo>.git"
+  branch   = "main"
+  password = "${env.CRONICLE_TOKEN}"
+}
+```
+
+`${env.X}` interpolates an env var at parse time — the literal
+secret never appears in HCL. The worker pod already has
+`CRONICLE_TOKEN` in its environment, so this is a fill-in-the-name
+field, not a "go find the token" task.
+
 Concretely: if the repo has a `digest.py` at the root and the HCL says
 
     task "run" {

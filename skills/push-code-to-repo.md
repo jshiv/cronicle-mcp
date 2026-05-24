@@ -23,8 +23,9 @@ the cronicle-hosted URL, e.g.:
 
 ```hcl
 repo {
-  url    = "https://api.cronicle.dev/git/<org>/<repo>.git"
-  branch = "main"
+  url      = "https://api.cronicle.dev/git/<org>/<repo>.git"
+  branch   = "main"
+  password = "${env.CRONICLE_TOKEN}"
 }
 
 schedule "daily" {
@@ -36,6 +37,13 @@ schedule "daily" {
   }
 }
 ```
+
+The `password = "${env.X}"` syntax interpolates an env var at HCL
+parse time — the literal secret never appears in the file. The worker
+pod has `CRONICLE_TOKEN` already in its environment (the platform
+injects it), so the user just declares the reference. For GitHub or
+other hosts, swap in the host's env var
+(`password = "${env.GITHUB_TOKEN}"`). Public repos can omit the line.
 
 Two things the top-level `repo` block does:
 
